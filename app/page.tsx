@@ -1125,7 +1125,7 @@ const getModeIcon = () => {
       {/* Solid color banner at the top */}
       <div className="w-full h-[120px] md:h-[120px] h-[60px] flex flex-row items-center justify-center m-0 p-0 mb-6 md:mb-2 lg:mb-0" style={{ backgroundColor: '#3ea6ac' }}>
         <a
-          href="https://acolyte-learning-pathway.vercel.app/"
+          href="https://www.acolyteai.com/"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center group mr-4"
