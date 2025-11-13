@@ -21,7 +21,7 @@ import {
 import { Avatar } from "@/app/components/ui/avatar"
 import { Textarea } from "@/app/components/ui/textarea"
 import { motion, AnimatePresence } from "framer-motion"
-import { useChat } from "ai/react"
+import { useChat } from "@ai-sdk/react"
 import type { LearningMode, Reference } from "./types"
 import { SpeechControls } from "@/app/components/speech-controls"
 import Image from "next/image"
