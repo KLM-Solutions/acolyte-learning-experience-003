@@ -858,18 +858,7 @@ export default function Home() {
     error: chatError,
     reload,
     setMessages
-  } = chatHelpers ?? {
-    messages: [],
-    input: "",
-    setInput: undefined,
-    handleInputChange: undefined,
-    handleSubmit: undefined,
-    append: undefined,
-    isLoading: false,
-    error: undefined,
-    reload: async () => null,
-    setMessages: () => {},
-  }
+  } = chatHelpers
 
   const safeSetInput = useCallback(
     (value: string) => {
