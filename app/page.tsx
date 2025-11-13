@@ -949,6 +949,76 @@ export default function Home() {
     setShowTooltip(false)
   }
 
+  // Fallback: manual chat sender for environments where useChat handlers are unavailable
+  const sendMessageManually = useCallback(async (userText: string) => {
+    try {
+      // Optimistically add user message
+      const optimisticUser = { id: `user-${Date.now()}`, content: userText, role: "user" as const }
+      const baseMessages = Array.isArray(messages) ? messages : []
+      const nextMessages = [...baseMessages, optimisticUser]
+      setMessages(nextMessages as any)
+      setIsLoading(true)
+      setError(null)
+      
+      // Prepare system message consistent with the selected mode
+      const systemMessage =
+        selectedMode === "readymade"
+          ? heroContent?.readymade_system_message
+          : selectedMode === "build"
+            ? heroContent?.build_system_message
+            : selectedMode === "review"
+              ? heroContent?.review_system_message
+              : undefined
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: nextMessages.map(m => ({ role: m.role, content: m.content })), // minimal shape
+          mode: selectedMode,
+          systemMessage
+        }),
+      })
+
+      if (!res.ok || !res.body) {
+        const errText = await res.text().catch(() => "")
+        throw new Error(errText || `Chat request failed with status ${res.status}`)
+      }
+
+      // Create assistant placeholder and stream into it
+      const assistantId = `assistant-${Date.now()}`
+      const decoder = new TextDecoder()
+      const reader = res.body.getReader()
+      let assistantContent = ""
+
+      // Push initial assistant message
+      setMessages((prev: any) => ([
+        ...(Array.isArray(prev) ? prev : []),
+        { id: assistantId, content: "", role: "assistant" as const }
+      ]))
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        assistantContent += decoder.decode(value, { stream: true })
+        // Update the last assistant message incrementally
+        setMessages((prev: any) => {
+          const arr = Array.isArray(prev) ? [...prev] : []
+          const idx = arr.findIndex((m: any) => m.id === assistantId)
+          if (idx !== -1) {
+            arr[idx] = { ...arr[idx], content: assistantContent }
+          }
+          return arr
+        })
+      }
+    } catch (err) {
+      console.error("Manual chat send failed:", err)
+      setError(err instanceof Error ? err.message : "Failed to send message")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [messages, selectedMode, heroContent, setMessages])
+
   // Create a custom submit handler that prevents default behavior
   const handleSubmitInput = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); // This prevents the page refresh
@@ -968,8 +1038,8 @@ export default function Home() {
           { data: { message: currentValue } },
         )
       } else {
-        console.warn("Chat submission handler unavailable, message not sent.")
-        return
+        console.warn("Chat submission handler unavailable, using manual fallback.")
+        await sendMessageManually(currentValue)
       }
       safeSetInput("")
       setLocalInput("")
