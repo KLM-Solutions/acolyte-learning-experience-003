@@ -826,8 +826,8 @@ export default function Home() {
   // Use the AI SDK's useChat hook
   const {
     messages,
-    input,
-    handleInputChange,
+    input = "",
+    setInput,
     handleSubmit: submitChat,
     isLoading: chatIsLoading,
     error: chatError,
@@ -912,7 +912,7 @@ export default function Home() {
   const handleSubmitInput = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); // This prevents the page refresh
     
-    if (!input || !input.trim()) return;
+    if (!input.trim()) return;
     
     // Submit the message using the AI SDK
     submitChat(e, {
@@ -921,6 +921,10 @@ export default function Home() {
     
     // Close the text area by resetting the input method
     setInputMethod("none");
+  };
+
+  const handleTextareaChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(event.target.value);
   };
 
  // Get mode title
@@ -982,9 +986,7 @@ const getModeIcon = () => {
 
   const handleTranscription = (text: string) => {
     // First set the text in the input area (for display purposes)
-    handleInputChange({
-      target: { value: text }
-    } as React.ChangeEvent<HTMLTextAreaElement>);
+    setInput(text);
     
     // Focus on the input area
     if (formRef.current) {
@@ -1671,8 +1673,8 @@ const getModeIcon = () => {
                     <div className="flex flex-row space-x-2 sm:space-x-4">
                       <textarea
                         ref={textareaRef}
-                        value={input || ''}
-                        onChange={handleInputChange}
+                        value={input}
+                        onChange={handleTextareaChange}
                         onInput={e => {
                           const target = e.target as HTMLTextAreaElement;
                           target.style.height = 'auto';
@@ -1686,8 +1688,8 @@ const getModeIcon = () => {
                       <form ref={formRef} onSubmit={handleSubmitInput} className="flex items-center">
                         <button
                           type="submit"
-                          disabled={isLoading || !input || !input.trim()}
-                          className={`bg-[#000000] text-white px-3 sm:px-4 py-2 rounded-md flex items-center space-x-1 sm:space-x-2 hover:bg-[#333333] transition-colors duration-300 ${(!input || !input.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          disabled={isLoading || !input.trim()}
+                          className={`bg-[#000000] text-white px-3 sm:px-4 py-2 rounded-md flex items-center space-x-1 sm:space-x-2 hover:bg-[#333333] transition-colors duration-300 ${(!input.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {isLoading ? (
                             <Loader className="h-5 w-5 animate-spin" />
