@@ -681,7 +681,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, disabled
 export default function Home() {
   const [selectedMode, setSelectedMode] = useState<LearningMode>(null)
   const [inputMethod, setInputMethod] = useState<"none" | "mic" | "keyboard">("none")
-  const [inputText, setInputText] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [autoRead, setAutoRead] = useState(false)
   const [currentlyReadingId, setCurrentlyReadingId] = useState<string | null>(null)
@@ -826,7 +825,10 @@ export default function Home() {
   // Use the AI SDK's useChat hook
   const {
     messages,
-    append,
+    input,
+    setInput,
+    handleInputChange,
+    handleSubmit,
     isLoading: chatIsLoading,
     error: chatError,
     reload,
@@ -910,14 +912,10 @@ export default function Home() {
   const handleSubmitInput = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); // This prevents the page refresh
     
-    if (!inputText.trim()) return;
+    if (!input || !input.trim()) return;
     
     try {
-      await append(
-        { role: "user", content: inputText },
-        { data: { message: inputText } }
-      );
-      setInputText("");
+      await handleSubmit(e, { data: { message: input } });
     } catch (err) {
       console.error("Error sending message:", err);
       setError(err instanceof Error ? err.message : "Failed to send message");
@@ -985,8 +983,9 @@ const getModeIcon = () => {
   }, [messages, chatIsLoading, autoRead]);
 
   const handleTranscription = (text: string) => {
-    // First set the text in the input area (for display purposes)
-    setInputText(text);
+    if (typeof setInput === "function") {
+      setInput(text);
+    }
     
     // Focus on the input area
     if (formRef.current) {
@@ -1673,8 +1672,8 @@ const getModeIcon = () => {
                     <div className="flex flex-row space-x-2 sm:space-x-4">
                       <textarea
                         ref={textareaRef}
-                        value={inputText}
-                        onChange={(event) => setInputText(event.target.value)}
+                        value={input ?? ""}
+                        onChange={handleInputChange}
                         onInput={e => {
                           const target = e.target as HTMLTextAreaElement;
                           target.style.height = 'auto';
@@ -1688,8 +1687,8 @@ const getModeIcon = () => {
                       <form ref={formRef} onSubmit={handleSubmitInput} className="flex items-center">
                         <button
                           type="submit"
-                          disabled={isLoading || chatIsLoading || !inputText.trim()}
-                          className={`bg-[#000000] text-white px-3 sm:px-4 py-2 rounded-md flex items-center space-x-1 sm:space-x-2 hover:bg-[#333333] transition-colors duration-300 ${(!inputText.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          disabled={isLoading || chatIsLoading || !input || !input.trim()}
+                          className={`bg-[#000000] text-white px-3 sm:px-4 py-2 rounded-md flex items-center space-x-1 sm:space-x-2 hover:bg-[#333333] transition-colors duration-300 ${(!input || !input.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {isLoading ? (
                             <Loader className="h-5 w-5 animate-spin" />
