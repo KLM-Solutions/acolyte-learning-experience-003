@@ -824,18 +824,7 @@ export default function Home() {
   }
 
   // Use the AI SDK's useChat hook
-  const {
-    messages,
-    input,
-    setInput,
-    handleInputChange,
-    handleSubmit,
-    append,
-    isLoading: chatIsLoading,
-    error: chatError,
-    reload,
-    setMessages
-  } = useChat({
+  const chatHelpers = useChat({
     api: "/api/chat",
     body: { 
       mode: selectedMode,
@@ -857,6 +846,30 @@ export default function Home() {
       // Simplified onFinish handler
     },
   })
+
+  const {
+    messages,
+    input,
+    setInput,
+    handleInputChange,
+    handleSubmit,
+    append,
+    isLoading: chatIsLoading,
+    error: chatError,
+    reload,
+    setMessages
+  } = chatHelpers ?? {
+    messages: [],
+    input: "",
+    setInput: undefined,
+    handleInputChange: undefined,
+    handleSubmit: undefined,
+    append: undefined,
+    isLoading: false,
+    error: undefined,
+    reload: async () => null,
+    setMessages: () => {},
+  }
 
   const safeSetInput = useCallback(
     (value: string) => {
@@ -891,6 +904,9 @@ export default function Home() {
   const currentInputValue = typeof input === "string" ? input : localInput
   const trimmedInputValue =
     typeof currentInputValue === "string" ? currentInputValue.trim() : ""
+  const inputIsEmpty = trimmedInputValue.length === 0
+  const sendingDisabled =
+    isLoading || chatIsLoading || inputIsEmpty || (!handleSubmit && !append)
 
   // Effect to send initial message when mode is selected, with a delay
   useEffect(() => {
@@ -959,11 +975,12 @@ export default function Home() {
         await handleSubmit(e, { data: { message: currentValue } })
       } else if (typeof append === "function") {
         await append(
-          { role: "user", content: currentValue },
+          { role: "user", content: currentValue, parts: [{ type: "text", text: currentValue }] },
           { data: { message: currentValue } },
         )
       } else {
-        throw new Error("Chat submission handler is unavailable.")
+        console.warn("Chat submission handler unavailable, message not sent.")
+        return
       }
       safeSetInput("")
       setLocalInput("")
@@ -1737,8 +1754,8 @@ const getModeIcon = () => {
                       <form ref={formRef} onSubmit={handleSubmitInput} className="flex items-center">
                         <button
                           type="submit"
-                          disabled={isLoading || chatIsLoading || trimmedInputValue.length === 0}
-                          className={`bg-[#000000] text-white px-3 sm:px-4 py-2 rounded-md flex items-center space-x-1 sm:space-x-2 hover:bg-[#333333] transition-colors duration-300 ${(trimmedInputValue.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          disabled={sendingDisabled}
+                          className={`bg-[#000000] text-white px-3 sm:px-4 py-2 rounded-md flex items-center space-x-1 sm:space-x-2 hover:bg-[#333333] transition-colors duration-300 ${sendingDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {isLoading ? (
                             <Loader className="h-5 w-5 animate-spin" />
