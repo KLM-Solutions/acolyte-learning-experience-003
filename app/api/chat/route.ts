@@ -247,7 +247,45 @@ Tone: Warm, human, grounded, and insightful — like a trusted coach who encoura
         system: systemMessage,
       })
 
-      return result.toDataStreamResponse()
+      const anyResult = result as any
+
+      if (typeof anyResult?.toDataStreamResponse === "function") {
+        return anyResult.toDataStreamResponse()
+      }
+
+      if (typeof anyResult?.toUIMessageStreamResponse === "function") {
+        return anyResult.toUIMessageStreamResponse()
+      }
+
+      if (typeof anyResult?.toAIStreamResponse === "function") {
+        return anyResult.toAIStreamResponse()
+      }
+
+      if (typeof anyResult?.toResponse === "function") {
+        return anyResult.toResponse()
+      }
+
+      if (typeof anyResult?.toAIStream === "function") {
+        const aiStream = anyResult.toAIStream()
+        if (aiStream) {
+          return new Response(aiStream, {
+            headers: {
+              "Content-Type": "text/plain; charset=utf-8",
+            },
+          })
+        }
+      }
+
+      console.warn("streamText returned unexpected shape", Object.keys(anyResult ?? {}))
+      return new Response(
+        JSON.stringify({
+          error: "Unsupported stream response format from model.",
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        },
+      )
     } catch (openaiError) {
       console.error("OpenAI API error:", openaiError)
       return new Response(
