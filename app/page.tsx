@@ -826,10 +826,7 @@ export default function Home() {
   // Use the AI SDK's useChat hook
   const {
     messages,
-    input,
-    setInput,
-    handleInputChange,
-    handleSubmit: submitChat,
+    append,
     isLoading: chatIsLoading,
     error: chatError,
     reload,
@@ -910,15 +907,21 @@ export default function Home() {
   }
 
   // Create a custom submit handler that prevents default behavior
-  const handleSubmitInput = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmitInput = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); // This prevents the page refresh
     
-    if (!input?.trim()) return;
+    if (!inputText.trim()) return;
     
-    // Submit the message using the AI SDK
-    submitChat(e, {
-      data: { message: input },
-    });
+    try {
+      await append(
+        { role: "user", content: inputText },
+        { data: { message: inputText } }
+      );
+      setInputText("");
+    } catch (err) {
+      console.error("Error sending message:", err);
+      setError(err instanceof Error ? err.message : "Failed to send message");
+    }
     
     // Close the text area by resetting the input method
     setInputMethod("none");
@@ -983,7 +986,7 @@ const getModeIcon = () => {
 
   const handleTranscription = (text: string) => {
     // First set the text in the input area (for display purposes)
-    setInput(text);
+    setInputText(text);
     
     // Focus on the input area
     if (formRef.current) {
@@ -1670,8 +1673,8 @@ const getModeIcon = () => {
                     <div className="flex flex-row space-x-2 sm:space-x-4">
                       <textarea
                         ref={textareaRef}
-                        value={input ?? ""}
-                        onChange={handleInputChange}
+                        value={inputText}
+                        onChange={(event) => setInputText(event.target.value)}
                         onInput={e => {
                           const target = e.target as HTMLTextAreaElement;
                           target.style.height = 'auto';
@@ -1685,8 +1688,8 @@ const getModeIcon = () => {
                       <form ref={formRef} onSubmit={handleSubmitInput} className="flex items-center">
                         <button
                           type="submit"
-                          disabled={isLoading || !input?.trim()}
-                          className={`bg-[#000000] text-white px-3 sm:px-4 py-2 rounded-md flex items-center space-x-1 sm:space-x-2 hover:bg-[#333333] transition-colors duration-300 ${(!input?.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          disabled={isLoading || chatIsLoading || !inputText.trim()}
+                          className={`bg-[#000000] text-white px-3 sm:px-4 py-2 rounded-md flex items-center space-x-1 sm:space-x-2 hover:bg-[#333333] transition-colors duration-300 ${(!inputText.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {isLoading ? (
                             <Loader className="h-5 w-5 animate-spin" />
