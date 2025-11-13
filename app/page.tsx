@@ -1053,9 +1053,6 @@ export default function Home() {
       console.error("Error sending message:", err);
       setError(err instanceof Error ? err.message : "Failed to send message");
     }
-    
-    // Close the text area by resetting the input method
-    setInputMethod("none");
   };
 
  // Get mode title
