@@ -912,7 +912,7 @@ export default function Home() {
   const handleSubmitInput = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); // This prevents the page refresh
     
-    if (!input.trim()) return;
+    if (!input || !input.trim()) return;
     
     // Submit the message using the AI SDK
     submitChat(e, {
@@ -1671,7 +1671,7 @@ const getModeIcon = () => {
                     <div className="flex flex-row space-x-2 sm:space-x-4">
                       <textarea
                         ref={textareaRef}
-                        value={input}
+                        value={input || ''}
                         onChange={handleInputChange}
                         onInput={e => {
                           const target = e.target as HTMLTextAreaElement;
@@ -1686,8 +1686,8 @@ const getModeIcon = () => {
                       <form ref={formRef} onSubmit={handleSubmitInput} className="flex items-center">
                         <button
                           type="submit"
-                          disabled={isLoading || !input.trim()}
-                          className={`bg-[#000000] text-white px-3 sm:px-4 py-2 rounded-md flex items-center space-x-1 sm:space-x-2 hover:bg-[#333333] transition-colors duration-300 ${(!input.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          disabled={isLoading || !input || !input.trim()}
+                          className={`bg-[#000000] text-white px-3 sm:px-4 py-2 rounded-md flex items-center space-x-1 sm:space-x-2 hover:bg-[#333333] transition-colors duration-300 ${(!input || !input.trim()) ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {isLoading ? (
                             <Loader className="h-5 w-5 animate-spin" />
