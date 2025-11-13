@@ -3,7 +3,7 @@ import { streamText } from "ai"
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
@@ -14,10 +14,11 @@ export async function POST(req: Request) {
 
     // Check if OpenAI API key is available
     if (!process.env.OPENAI_API_KEY) {
-      console.error("OPENAI_API_KEY is not defined")
+      console.log("OPENAI_API_KEY is not defined")
+      console.log("OPENAI_API_KEY runtime value:", process.env.OPENAI_API_KEY)
       return new Response(
         JSON.stringify({
-          error: "OpenAI API key is missing. Please add OPENAI_API_KEY to your environment variables.",
+          error: "OpenAI API key is missing.",
         }),
         { 
           status: 500, 
@@ -241,7 +242,7 @@ Tone: Warm, human, grounded, and insightful — like a trusted coach who encoura
 
     try {
       const result = streamText({
-        model: openai("gpt-4o-mini"),
+        model: openai("gpt-4o"),
         messages,
         system: systemMessage,
       })
