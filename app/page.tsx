@@ -859,6 +859,10 @@ export default function Home() {
     reload,
     setMessages
   } = chatHelpers
+  // Back-compat with newer AI SDK which returns sendMessage
+  const sendMessageAny = (chatHelpers as any)?.sendMessage as
+    | ((arg: { text: string }) => Promise<void>)
+    | undefined;
 
   const safeSetInput = useCallback(
     (value: string) => {
@@ -1030,7 +1034,9 @@ export default function Home() {
     if (!trimmedValue) return
     
     try {
-      if (typeof handleSubmit === "function") {
+      if (typeof sendMessageAny === "function") {
+        await sendMessageAny({ text: currentValue })
+      } else if (typeof handleSubmit === "function") {
         await handleSubmit(e, { data: { message: currentValue } })
       } else if (typeof append === "function") {
         await append(
@@ -1704,17 +1710,28 @@ const getModeIcon = () => {
                     </p>
                   </div>
                 ) : (
-                  messages.map((message) => (
-                    <MessageBubble
-                      key={message.id}
-                      id={message.id}
-                      content={message.content}
-                      role={message.role as "user" | "assistant"}
-                      isCurrentlyReading={message.id === currentlyReadingId}
-                      onReadMessage={() => setCurrentlyReadingId(message.id)}
-                      onStopReading={stopReading}
-                    />
-                  ))
+                  messages.map((message) => {
+                    const contentFromParts = Array.isArray((message as any).parts)
+                      ? (message as any).parts
+                          .filter((p: any) => p?.type === "text" && typeof p?.text === "string")
+                          .map((p: any) => p.text)
+                          .join("")
+                      : undefined
+                    const displayContent = typeof (message as any).content === "string"
+                      ? (message as any).content
+                      : (contentFromParts ?? "")
+                    return (
+                      <MessageBubble
+                        key={message.id}
+                        id={message.id}
+                        content={displayContent}
+                        role={message.role as "user" | "assistant"}
+                        isCurrentlyReading={message.id === currentlyReadingId}
+                        onReadMessage={() => setCurrentlyReadingId(message.id)}
+                        onStopReading={stopReading}
+                      />
+                    )
+                  })
                 )}
               </div>
             </div>
