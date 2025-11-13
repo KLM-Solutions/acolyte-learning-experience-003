@@ -906,7 +906,7 @@ export default function Home() {
     typeof currentInputValue === "string" ? currentInputValue.trim() : ""
   const inputIsEmpty = trimmedInputValue.length === 0
   const sendingDisabled =
-    isLoading || chatIsLoading || inputIsEmpty || (!handleSubmit && !append)
+    isLoading || chatIsLoading || inputIsEmpty
 
   // Effect to send initial message when mode is selected, with a delay
   useEffect(() => {
