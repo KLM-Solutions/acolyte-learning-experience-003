@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const { messages, mode, systemMessage: clientSystemMessage } = await req.json()
+    const { messages: rawMessages, mode, systemMessage: clientSystemMessage } = await req.json()
 
     console.log("API route called with mode:", mode)
 
@@ -240,10 +240,58 @@ Tone: Warm, human, grounded, and insightful — like a trusted coach who encoura
     console.log("Selected mode:", mode)
     console.log("System prompt:", systemMessage)
 
+    type NormalizedMessage = {
+      role: "user" | "assistant"
+      content: Array<{ type: "text"; text: string }>
+    }
+
+    const normalizedMessages: NormalizedMessage[] = Array.isArray(rawMessages)
+      ? rawMessages
+          .map((message: any): NormalizedMessage | null => {
+            if (!message) return null
+            const role = message.role
+            if (role !== "user" && role !== "assistant") {
+              return null
+            }
+
+            let text = ""
+            if (typeof message.content === "string") {
+              text = message.content
+            } else if (Array.isArray(message.parts)) {
+              text = message.parts
+                .map((part: any) => {
+                  if (part?.type === "text" && typeof part.text === "string") {
+                    return part.text
+                  }
+                  if (typeof part === "string") {
+                    return part
+                  }
+                  return ""
+                })
+                .join("")
+            }
+
+            if (!text) {
+              return null
+            }
+
+            return {
+              role,
+              content: [
+                {
+                  type: "text",
+                  text,
+                },
+              ],
+            }
+          })
+          .filter((message): message is NormalizedMessage => message !== null)
+      : []
+
     try {
       const result = streamText({
         model: openai("gpt-4o"),
-        messages,
+        messages: normalizedMessages,
         system: systemMessage,
       })
 
